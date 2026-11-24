@@ -1,4 +1,17 @@
 {
   "name": "solana-wc",
-  "packageManager": "yarn@4.18.0"
+  "packageManager": "yarn@4.18.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "concurrently -c \"cyan,magenta\" \"yarn workspace backend dev\" \"yarn workspace frontend dev\"",
+    "install:all": "yarn install"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6"
+  }
 }
