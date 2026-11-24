@@ -15,7 +15,7 @@ import {
 import { ioServer } from './socket-server.js';
 import { loadWallet, getTakerPublicKey } from './solana-wallet.js';
 import { logger } from './logger.js';
-import type { WcSessionSummary, PendingSignRequest } from '@solana-wc/shared/socket';
+import type { WcSessionSummary, PendingSignRequest, PendingProposal } from '@solana-wc/shared/socket';
 
 const SOLANA_MAINNET_CHAIN = 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp';
 
@@ -28,6 +28,14 @@ interface PendingEntry {
 }
 
 const pendingRequests = new Map<number, PendingEntry>();
+
+interface PendingProposalEntry {
+  proposal: PendingProposal;
+  resolve: (approved: boolean) => void;
+  timer: NodeJS.Timeout;
+}
+
+const pendingProposals = new Map<number, PendingProposalEntry>();
 
 export async function initWalletKit() {
   if (walletKit) return;
@@ -55,6 +63,15 @@ export async function initWalletKit() {
 
   instance.on('session_proposal', async (proposal) => {
     try {
+      const approved = await waitForFrontendProposalApproval({
+        id: proposal.id,
+        dappName: proposal.params.proposer.metadata.name ?? 'Unknown DApp',
+        dappUrl: proposal.params.proposer.metadata.url ?? '',
+      });
+
+      if (!approved) {
+        throw new Error('Proposal rejected by user on Frontend');
+      }
       const approvedNamespaces = buildApprovedNamespaces({
         proposal: proposal.params,
         supportedNamespaces: {
@@ -97,7 +114,7 @@ export async function initWalletKit() {
 
       const session = instance.getActiveSessions()[topic];
 
-      const approved = await waitForFrontendApproval({
+      const approved = await waitForFrontendRequestApproval({
         id,
         topic,
         dappName: session?.peer.metadata.name ?? 'Unknown DApp',
@@ -184,16 +201,16 @@ export function getActiveWcSessions(): WcSessionSummary[] {
   }));
 }
 
-export function getPendingWcRequests(): PendingSignRequest[] {
-  return Array.from(pendingRequests.values()).map((entry) => entry.request);
-}
-
 export async function disconnectWcSession(topic: string) {
   if (!walletKit) throw new Error('WalletKit is not initialized');
   await walletKit.disconnectSession({
     topic,
     reason: getSdkError('USER_DISCONNECTED'),
   });
+}
+
+export function getPendingWcRequests(): PendingSignRequest[] {
+  return Array.from(pendingRequests.values()).map((entry) => entry.request);
 }
 
 export function flushPendingWcRequests(): number {
@@ -206,7 +223,7 @@ export function flushPendingWcRequests(): number {
   return count;
 }
 
-function waitForFrontendApproval(
+function waitForFrontendRequestApproval(
   req: PendingSignRequest,
   timeoutMs = 120_000
 ): Promise<boolean> {
@@ -221,10 +238,47 @@ function waitForFrontendApproval(
   });
 }
 
-export function resolveFrontendApproval(id: number, approved: boolean) {
+export function getPendingWcProposals(): PendingProposal[] {
+  return Array.from(pendingProposals.values()).map((entry) => entry.proposal);
+}
+
+export function flushPendingWcProposals(): number {
+  const count = pendingProposals.size;
+  for (const [id, pending] of pendingProposals.entries()) {
+    clearTimeout(pending.timer);
+    pending.resolve(false);
+    pendingProposals.delete(id);
+  }
+  return count;
+}
+
+function waitForFrontendProposalApproval(
+  proposal: PendingProposal,
+  timeoutMs = 120_000
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      pendingProposals.delete(proposal.id);
+      resolve(false);
+    }, timeoutMs);
+
+    pendingProposals.set(proposal.id, { proposal, resolve, timer });
+    ioServer.emit('wc:session_proposal', proposal);
+  });
+}
+
+export function resolveFrontendRequestApproval(id: number, approved: boolean) {
   const pending = pendingRequests.get(id);
   if (!pending) return;
   clearTimeout(pending.timer);
   pendingRequests.delete(id);
+  pending.resolve(approved);
+}
+
+export function resolveFrontendProposalApproval(id: number, approved: boolean) {
+  const pending = pendingProposals.get(id);
+  if (!pending) return;
+  clearTimeout(pending.timer);
+  pendingProposals.delete(id);
   pending.resolve(approved);
 }

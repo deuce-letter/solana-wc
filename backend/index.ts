@@ -1,6 +1,6 @@
 import './loadenv.js';
 import { loadWallet } from './components/solana-wallet.js';
-import { initWalletKit } from './components/walletkit.js';
+import { initWalletKit, flushPendingWcRequests, flushPendingWcProposals } from './components/walletkit.js';
 import { startSocketServer, stopSocketServer } from './components/socket-server.js';
 import { logger } from './components/logger.js';
 
@@ -19,6 +19,10 @@ async function main() {
 
 process.on('SIGINT', async () => {
   logger.info('Shutting down...');
+  const flushedReqs = flushPendingWcRequests();
+  const flushedProps = flushPendingWcProposals();
+  await new Promise((r) => setTimeout(r, 300));
+  logger.info({ flushedReqs, flushedProps }, 'Flushed pending WalletConnect approvals');
   await stopSocketServer();
   process.exit(0);
 });

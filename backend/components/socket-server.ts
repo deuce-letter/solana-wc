@@ -6,9 +6,11 @@ import { getTakerPublicKey } from './solana-wallet.js';
 import {
   pairWalletConnect,
   disconnectWcSession,
-  resolveFrontendApproval,
+  resolveFrontendRequestApproval,
+  resolveFrontendProposalApproval,
   getActiveWcSessions,
   getPendingWcRequests,
+  getPendingWcProposals,
 } from './walletkit.js';
 
 const httpServer = createServer();
@@ -51,6 +53,9 @@ ioServer.on('connection', async (socket) => {
   for (const req of getPendingWcRequests()) {
     socket.emit('wc:session_request', req);
   }
+  for (const req of getPendingWcProposals()) {
+    socket.emit('wc:session_proposal', req);
+  }
 
   socket.on('wc:pair', async (uri) => {
     try {
@@ -70,10 +75,18 @@ ioServer.on('connection', async (socket) => {
   });
 
   socket.on('wc:approve_request', (id) => {
-    resolveFrontendApproval(id, true);
+    resolveFrontendRequestApproval(id, true);
   });
 
   socket.on('wc:reject_request', (id) => {
-    resolveFrontendApproval(id, false);
+    resolveFrontendRequestApproval(id, false);
+  });
+
+  socket.on('wc:approve_proposal', (id) => {
+    resolveFrontendProposalApproval(id, true);
+  });
+
+  socket.on('wc:reject_proposal', (id) => {
+    resolveFrontendProposalApproval(id, false);
   });
 });

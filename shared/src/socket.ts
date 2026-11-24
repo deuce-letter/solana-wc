@@ -14,12 +14,17 @@ export interface PendingSignRequest {
   params: unknown;
 }
 
+export interface PendingProposal {
+  id: number;
+  dappName: string;
+  dappUrl: string;
+}
+
 export interface ServerToClientEvents {
   'wallet:address': (address: string | null) => void;
   'wc:sessions': (sessions: WcSessionSummary[]) => void;
   'wc:session_request': (request: PendingSignRequest) => void;
-  // TODO
-  // 'wc:session_proposal': (proposal: { id: number; dappName: string; dappUrl: string }) => void;
+  'wc:session_proposal': (proposal: PendingProposal) => void;
 }
 
 export interface ClientToServerEvents {
@@ -27,7 +32,6 @@ export interface ClientToServerEvents {
   'wc:disconnect': (topic: string) => void;
   'wc:approve_request': (id: number) => void;
   'wc:reject_request': (id: number) => void;
-  // TODO
-  // 'wc:approve_proposal': (id: number) => void;
-  // 'wc:reject_proposal': (id: number) => void;
+  'wc:approve_proposal': (id: number) => void;
+  'wc:reject_proposal': (id: number) => void;
 }

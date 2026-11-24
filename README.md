@@ -67,8 +67,7 @@ Reown WalletKitを初期化し、次を担当します。
 - `solana_signTransaction`
 - フロントエンドによる承認待ち
 
-セッション提案は自動承認です。承認時にSolana mainnetだけを公開し、
-公開アカウントとしてロード済みウォレットのアドレスを渡します。
+承認時にSolana mainnetだけを公開し、公開アカウントとしてロード済みウォレットのアドレスを渡します。
 
 署名リクエストは最大120秒間待機します。フロントエンドが承認しない場合は拒否扱いです。
 接続中のフロントエンドがなくてもリクエスト情報はメモリ上に残るため、新しいフロントエンドが接続した時点で再送されます。
@@ -91,7 +90,9 @@ Reown WalletKitを初期化し、次を担当します。
 - `wc:pair`
 - `wc:disconnect`
 - `wc:approve_request`
+- `wc:approve_proposal`
 - `wc:reject_request`
+- `wc:reject_proposal`
 
 Socket.IOは通常の `localhost:5173` と `127.0.0.1:5173` を許可します。
 追加オリジンは `FRONTEND_ORIGIN` で指定できます。
@@ -158,10 +159,8 @@ Socket.IOのイベント名とペイロードは [shared/src/socket.ts](shared/s
 
 ## 現在の注意点
 
-- セッション提案は確認ダイアログなしで自動承認します
 - `solana_signTransaction` と `solana_signMessage` だけに対応します
 - フロントエンド承認リクエストは120秒でタイムアウトします
-- セッション提案の承認・拒否はTODOです
 - フロントエンドは現在Viteテンプレートのままで、バックエンドとの完全なUI連携は未実装です
 - 秘密鍵を扱うため、本番利用前には認証、監査ログ、ネットワーク制限、秘密鍵保管方式の強化が必要です
 
