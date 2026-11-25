@@ -197,6 +197,8 @@ export function getActiveWcSessions(): WcSessionSummary[] {
     topic: session.topic,
     peerName: session.peer.metadata.name,
     peerUrl: session.peer.metadata.url,
+    peerIcon: session.peer.metadata.icons[0] ?? null,
+    peerDescription: session.peer.metadata.description,
     expiry: session.expiry,
   }));
 }

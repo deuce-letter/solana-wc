@@ -2,6 +2,8 @@ export interface WcSessionSummary {
   topic: string;
   peerName: string;
   peerUrl: string;
+  peerIcon: string | null;
+  peerDescription: string;
   expiry: number;
 }
 
