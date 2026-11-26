@@ -65,11 +65,13 @@ export function useWalletSocket() {
     });
     socket.on("connect_error", (err) => {
       setStatus("disconnected");
+      setSessions([]);
       setError(`サーバーに接続できませんでした: ${err.message}`);
       appendLog("SYSTEM", "connect_error", err.message);
     });
     socket.on("disconnect", (reason) => {
       setStatus("disconnected");
+      setSessions([]);
       setApprovals([]);
       setAddress("")
       appendLog("SYSTEM", "disconnect", reason);
@@ -130,15 +132,16 @@ export function useWalletSocket() {
 
     const nextServerUrl = `http://${serverHost}:${port}`;
     if (nextServerUrl !== serverUrl) {
-      setSessions([]);
       setApprovals([]);
     }
+    setSessions([]);
     setStatus("connecting");
     setServerUrl(nextServerUrl);
     setConnectionAttempt((attempt) => attempt + 1);
   }
 
   function reconnect() {
+    setSessions([]);
     setStatus("connecting");
     setConnectionAttempt((attempt) => attempt + 1);
   }

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
 import type { PendingApproval } from "../hooks/useWalletSocket";
+import { PeerAvatar } from "./PeerAvatar";
 
 interface ApprovalDialogProps {
   approval: PendingApproval | undefined;
@@ -55,11 +56,11 @@ export function ApprovalDialog({
             </h2>
           </div>
           <div className="approval-app">
-            <div className="peer-avatar" aria-hidden="true">
-              <span>
-                {approval.value.dappName.trim().charAt(0).toUpperCase() || "?"}
-              </span>
-            </div>
+            <PeerAvatar
+              name={approval.value.dappName}
+              icon={approval.value.dappIcon}
+              baseUrl={approval.value.dappUrl}
+            />
             <div>
               <h3>{approval.value.dappName}</h3>
               <p>{approval.value.dappUrl}</p>

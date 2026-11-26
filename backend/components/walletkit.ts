@@ -20,6 +20,7 @@ import type { WcSessionSummary, PendingSignRequest, PendingProposal } from '@sol
 const SOLANA_MAINNET_CHAIN = 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp';
 
 let walletKit: InstanceType<typeof WalletKit> | null = null;
+let walletAddress: string | null = null;
 
 interface PendingEntry {
   request: PendingSignRequest;
@@ -48,7 +49,7 @@ export async function initWalletKit() {
   const core = new Core({
     projectId: process.env.REOWN_PROJECT_ID!,
     relayUrl: 'wss://relay.walletconnect.com',
-    storage: new ConfKeyValueStorage(),
+    storage: new ConfKeyValueStorage(`walletkit-${address}`),
   });
 
   const instance = await WalletKit.init({
@@ -67,6 +68,7 @@ export async function initWalletKit() {
         id: proposal.id,
         dappName: proposal.params.proposer.metadata.name ?? 'Unknown DApp',
         dappUrl: proposal.params.proposer.metadata.url ?? '',
+        dappIcon: proposal.params.proposer.metadata.icons[0] ?? null,
       });
 
       if (!approved) {
@@ -119,6 +121,7 @@ export async function initWalletKit() {
         topic,
         dappName: session?.peer.metadata.name ?? 'Unknown DApp',
         dappUrl: session?.peer.metadata.url ?? '',
+        dappIcon: session?.peer.metadata.icons[0] ?? null,
         method: request.method as PendingSignRequest['method'],
         params: request.params,
       });
@@ -183,6 +186,7 @@ export async function initWalletKit() {
   });
 
   walletKit = instance;
+  walletAddress = address;
 }
 
 export async function pairWalletConnect(uri: string) {
@@ -191,16 +195,21 @@ export async function pairWalletConnect(uri: string) {
 }
 
 export function getActiveWcSessions(): WcSessionSummary[] {
-  if (!walletKit) return [];
+  if (!walletKit || !walletAddress) return [];
 
-  return Object.values(walletKit.getActiveSessions()).map((session) => ({
-    topic: session.topic,
-    peerName: session.peer.metadata.name,
-    peerUrl: session.peer.metadata.url,
-    peerIcon: session.peer.metadata.icons[0] ?? null,
-    peerDescription: session.peer.metadata.description,
-    expiry: session.expiry,
-  }));
+  const account = `${SOLANA_MAINNET_CHAIN}:${walletAddress}`;
+  return Object.values(walletKit.getActiveSessions())
+    .filter((session) =>
+      Object.values(session.namespaces).some((namespace) => namespace.accounts.includes(account))
+    )
+    .map((session) => ({
+      topic: session.topic,
+      peerName: session.peer.metadata.name,
+      peerUrl: session.peer.metadata.url,
+      peerIcon: session.peer.metadata.icons[0] ?? null,
+      peerDescription: session.peer.metadata.description,
+      expiry: session.expiry,
+    }));
 }
 
 export async function disconnectWcSession(topic: string) {

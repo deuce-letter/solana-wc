@@ -40,6 +40,7 @@ yarn workspace backend dev:watch
 
 Solana mainnetの `solana_signMessage` と `solana_signTransaction` に対応します。
 セッション提案はロード済みウォレットのアドレスで自動承認されます。
+WalletConnectの永続ストレージはウォレットアドレスごとに分離され、通知するセッションもそのアドレスを含むものに限定されます。
 
 署名リクエストはフロントエンドへ送られ、承認または拒否を最大120秒待ちます。
 タイムアウト、拒否、署名失敗時はリクエスト側へ `USER_REJECTED` を返します。

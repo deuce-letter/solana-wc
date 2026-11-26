@@ -12,6 +12,7 @@ export interface PendingSignRequest {
   topic: string;
   dappName: string;
   dappUrl: string;
+  dappIcon: string | null;
   method: 'solana_signMessage' | 'solana_signTransaction'; // TODO: | 'solana_signAndSendTransaction';
   params: unknown;
 }
@@ -20,6 +21,7 @@ export interface PendingProposal {
   id: number;
   dappName: string;
   dappUrl: string;
+  dappIcon: string | null;
 }
 
 export interface ServerToClientEvents {
