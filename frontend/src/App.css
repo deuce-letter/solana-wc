@@ -118,6 +118,15 @@ input:disabled {
   text-underline-offset: 3px;
 }
 
+.address-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
 .address-row {
   display: flex;
   align-items: center;

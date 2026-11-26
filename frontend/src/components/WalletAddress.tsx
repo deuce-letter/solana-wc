@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
+import { getBase58Encoder } from "@solana/kit";
+import JazziconModule from "react-jazzicon";
 
 import type { SocketStatus } from "../hooks/useWalletSocket";
 
@@ -7,7 +9,28 @@ interface WalletAddressProps {
   status: SocketStatus;
 }
 
+type JazziconComponent = React.ComponentType<ComponentProps<typeof JazziconModule>>;
+
+const Jazzicon: JazziconComponent =
+  "default" in JazziconModule
+    ? (JazziconModule as unknown as { default: JazziconComponent }).default
+    : JazziconModule;
+
 type CopyFeedback = { state: "copied" | "failed"; address: string } | null;
+
+const base58Encoder = getBase58Encoder();
+function solanaAddressToSeed(address: string): number {
+try {
+    const bytes = base58Encoder.encode(address);
+    let hash = 0;
+    for (let i = 0; i < bytes.length; i++) {
+      hash = ((hash << 5) - hash + bytes[i]) | 0;
+    }
+    return Math.abs(hash);
+  } catch {
+    return Math.round(1e7 * Math.random());
+  }
+}
 
 function shortenAddress(address: string): string {
   if (address.length <= 12) return address;
@@ -17,6 +40,10 @@ function shortenAddress(address: string): string {
 export function WalletAddress({ address, status }: WalletAddressProps) {
   const [copyFeedback, setCopyFeedback] = useState<CopyFeedback>(null);
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const jazziconSeed = useMemo(() => {
+    return address ? solanaAddressToSeed(address) : null;
+  }, [address]);
 
   useEffect(() => {
     return () => {
@@ -68,11 +95,16 @@ export function WalletAddress({ address, status }: WalletAddressProps) {
         {canCopy && copyState === "idle" && (
           <span className="address-copy-hint">コピー</span>
         )}
+        {jazziconSeed !== null && (
+          <span className="address-avatar" aria-hidden="true">
+            <Jazzicon diameter={20} seed={jazziconSeed} />
+          </span>
+        )}
         <span>
           {copyState === "copied"
             ? "✓ コピー済み"
             : copyState === "failed"
-              ? "コピー失敗"
+              ? "✕ コピー失敗"
               : address
                 ? shortenAddress(address)
                 : "—"}
